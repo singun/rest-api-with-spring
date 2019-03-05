@@ -46,8 +46,7 @@ public class EventControllerTests {
 
 	@Test
 	public void createEvent() throws Exception {
-		Event event = Event.builder()
-			.id(100)
+		EventDto event = EventDto.builder()
 			.name("Spring")
 			.description("REST API Development with Spring")
 //			.beginEnrollmentDateTime(LocalDateTime.of(2019, 03, ))
@@ -55,9 +54,6 @@ public class EventControllerTests {
 			.maxPrice(200)
 			.limitOfEnrollment(100)
 			.location("D2 Startup Factory")
-			.free(true)
-			.offline(false)
-			.eventStatus(EventStatus.PUBLISHED)
 			.build();
 
 		mockMvc.perform(
@@ -72,6 +68,30 @@ public class EventControllerTests {
 			.andExpect(header().string(HttpHeaders.CONTENT_TYPE, MediaTypes.HAL_JSON_UTF8_VALUE))
 			.andExpect(jsonPath("id").value(Matchers.not(100)))
 			.andExpect(jsonPath("free").value(Matchers.not(true)))
-			.andExpect(jsonPath("eventStatus").value(EventStatus.DRAFT));
+			.andExpect(jsonPath("eventStatus").value(EventStatus.DRAFT.name()));
+	}
+
+	@Test
+	public void createEvent_Bad_request() throws Exception {
+		Event event = Event.builder()
+			.id(100)
+			.name("Spring")
+			.description("REST API Development with Spring")
+			.basePrice(100)
+			.maxPrice(200)
+			.limitOfEnrollment(100)
+			.location("D2 Startup Factory")
+			.free(true)
+			.offline(false)
+			.eventStatus(EventStatus.PUBLISHED)
+			.build();
+
+		mockMvc.perform(post("/api/events/")
+			.contentType(MediaType.APPLICATION_JSON_UTF8)
+			.accept(MediaTypes.HAL_JSON)
+			.content(objectMapper.writeValueAsString(event)))
+			.andDo(print())
+			.andExpect(status().isBadRequest())
+		;
 	}
 }
