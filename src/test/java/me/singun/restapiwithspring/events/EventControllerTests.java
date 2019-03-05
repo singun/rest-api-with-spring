@@ -1,12 +1,15 @@
 package me.singun.restapiwithspring.events;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.hamcrest.Matchers;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.hateoas.MediaTypes;
 import org.springframework.http.HttpEntity;
@@ -22,11 +25,13 @@ import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @RunWith(SpringRunner.class)
-@WebMvcTest
+//@WebMvcTest
 // 웹과 관련되 빈들이 모두 등록
 // slicing test -> web 계층만 테스트
 // 단위 테스트라고 보기에는 어려움
 // 왜 ? 너무 많은게 관련
+@SpringBootTest
+@AutoConfigureMockMvc
 public class EventControllerTests {
 
 	@Autowired
@@ -36,15 +41,13 @@ public class EventControllerTests {
 	// 요청을 만들수 있고, 응답을 테스트 해볼 수 있음
 	// 웹서버를 띄우지 않기 때문에 빠름
 
-	@MockBean
-	EventRepository eventRepository;
-
 	@Autowired
 	ObjectMapper objectMapper;
 
 	@Test
 	public void createEvent() throws Exception {
 		Event event = Event.builder()
+			.id(100)
 			.name("Spring")
 			.description("REST API Development with Spring")
 //			.beginEnrollmentDateTime(LocalDateTime.of(2019, 03, ))
@@ -52,9 +55,10 @@ public class EventControllerTests {
 			.maxPrice(200)
 			.limitOfEnrollment(100)
 			.location("D2 Startup Factory")
+			.free(true)
+			.offline(false)
+			.eventStatus(EventStatus.PUBLISHED)
 			.build();
-		event.setId(10);
-		Mockito.when(eventRepository.save(event)).thenReturn(event);
 
 		mockMvc.perform(
 			post("/api/events/")
@@ -63,9 +67,11 @@ public class EventControllerTests {
 				.content(objectMapper.writeValueAsString(event)))
 			.andDo(print())
 			.andExpect(status().isCreated())
-			.andExpect(jsonPath("id")
-				.exists())
-		.andExpect(header().exists(HttpHeaders.LOCATION))
-		.andExpect(header().string(HttpHeaders.CONTENT_TYPE, MediaTypes.HAL_JSON_UTF8_VALUE));
+			.andExpect(jsonPath("id").exists())
+			.andExpect(header().exists(HttpHeaders.LOCATION))
+			.andExpect(header().string(HttpHeaders.CONTENT_TYPE, MediaTypes.HAL_JSON_UTF8_VALUE))
+			.andExpect(jsonPath("id").value(Matchers.not(100)))
+			.andExpect(jsonPath("free").value(Matchers.not(true)))
+			.andExpect(jsonPath("eventStatus").value(EventStatus.DRAFT));
 	}
 }

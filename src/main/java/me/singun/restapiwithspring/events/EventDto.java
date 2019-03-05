@@ -1,20 +1,17 @@
 package me.singun.restapiwithspring.events;
 
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
-import javax.persistence.*;
 import java.time.LocalDateTime;
 
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Getter
-@Setter
-@EqualsAndHashCode(of = "id")
-@Entity
-public class Event {
-	@Id @GeneratedValue
-	private Integer id;
+@Data
+public class EventDto {
 	private String name;
 	private String description;
 	private LocalDateTime beginEnrollmentDateTime;
@@ -25,8 +22,4 @@ public class Event {
 	private int basePrice; // (optional)
 	private int maxPrice; // (optional)
 	private int limitOfEnrollment;
-	private boolean offline;
-	private boolean free;
-	@Enumerated(EnumType.STRING) // ordinal 은 enum 의 순서대로 숫자가 생성되는데, enum 의 순서가 변경되면 데이터가 꼬일 수 있음
-	private EventStatus eventStatus = EventStatus.DRAFT;
 }
