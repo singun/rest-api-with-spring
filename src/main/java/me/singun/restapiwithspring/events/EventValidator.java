@@ -10,8 +10,7 @@ public class EventValidator {
 
 	public void validate(EventDto eventDto, Errors errors) {
 		if (eventDto.getBasePrice() > eventDto.getMaxPrice() && eventDto.getMaxPrice() != 0) {
-			errors.rejectValue("basePrice", "wrongValue", "BasePrise is wrong");
-			errors.rejectValue("maxPrice", "wrongValue", "MaxPrise is wrong");
+			errors.reject("wrongPrice", "price is wrong");
 		}
 
 		LocalDateTime endEventDateTime = eventDto.getEndEventDateTime();

@@ -122,7 +122,7 @@ public class EventControllerTests {
 			.closeEnrollmentDateTime(LocalDateTime.now())
 			.beginEventDateTime(LocalDateTime.now())
 			.endEventDateTime(LocalDateTime.now())
-			.basePrice(200)
+		 	.basePrice(200)
 			.maxPrice(100)
 			.limitOfEnrollment(100)
 			.location("D2 Startup Factory")
@@ -131,6 +131,11 @@ public class EventControllerTests {
 		this.mockMvc.perform(post("/api/events")
 			.contentType(MediaType.APPLICATION_JSON_UTF8)
 			.content(this.objectMapper.writeValueAsString(eventDto)))
-			.andExpect(status().isBadRequest());
+			.andDo(print())
+			.andExpect(status().isBadRequest())
+			.andExpect(jsonPath("$[0].objectName").exists())
+			.andExpect(jsonPath("$[0].defaultMessage").exists())
+			.andExpect(jsonPath("$[0].code").exists())
+		;
 	}
 }
