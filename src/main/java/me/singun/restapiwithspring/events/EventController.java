@@ -1,6 +1,7 @@
 package me.singun.restapiwithspring.events;
 
 import org.modelmapper.ModelMapper;
+import org.springframework.hateoas.Link;
 import org.springframework.hateoas.MediaTypes;
 import org.springframework.hateoas.mvc.ControllerLinkBuilder;
 import org.springframework.http.ResponseEntity;
@@ -52,6 +53,7 @@ public class EventController {
 		// eventResource 내부로 이동
 //		eventResource.add(selfLinkBuild.withSelfRel());
 		eventResource.add(selfLinkBuild.withRel("update-event"));
+		eventResource.add(new Link("/docs/index.html#resources-events-create").withRel("profile"));
 		return ResponseEntity.created(createdUri).body(eventResource);
 	}
 }

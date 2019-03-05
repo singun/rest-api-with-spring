@@ -19,6 +19,7 @@ import org.springframework.hateoas.MediaTypes;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -43,6 +44,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @AutoConfigureMockMvc
 @AutoConfigureRestDocs
 @Import(RestDocsConfiguration.class)
+@ActiveProfiles("test")
 public class EventControllerTests {
 
 	@Autowired
@@ -84,14 +86,12 @@ public class EventControllerTests {
 			.andExpect(jsonPath("free").value(false))
 			.andExpect(jsonPath("offline").value(true))
 			.andExpect(jsonPath("eventStatus").value(EventStatus.DRAFT.name()))
-			.andExpect(jsonPath("_links.self").exists())
-			.andExpect(jsonPath("_links.query-events").exists())
-			.andExpect(jsonPath("_links.update-event").exists())
 			.andDo(document("create-event",
 				links(
 					linkWithRel("self").description("link to self"),
 					linkWithRel("query-events").description("link to query event"),
-					linkWithRel("update-event").description("link to update an existing")
+					linkWithRel("update-event").description("link to update an existing"),
+					linkWithRel("profile").description("profile")
 				),
 				requestHeaders(
 					headerWithName(HttpHeaders.ACCEPT).description("accept header"),
@@ -131,7 +131,8 @@ public class EventControllerTests {
 
 					fieldWithPath("_links.self.href").description("hyper link for self link"),
 					fieldWithPath("_links.query-events.href").description("hyper link for query events link"),
-					fieldWithPath("_links.update-event.href").description("hyper link for update event link")
+					fieldWithPath("_links.update-event.href").description("hyper link for update event link"),
+					fieldWithPath("_links.profile.href").description("profile")
 				)
 			))
 		;
