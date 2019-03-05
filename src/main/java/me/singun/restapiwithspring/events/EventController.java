@@ -2,6 +2,7 @@ package me.singun.restapiwithspring.events;
 
 import org.modelmapper.ModelMapper;
 import org.springframework.hateoas.MediaTypes;
+import org.springframework.hateoas.mvc.ControllerLinkBuilder;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.validation.Errors;
@@ -42,8 +43,15 @@ public class EventController {
 		}
 
 		Event event = modelMapper.map(eventDto, Event.class);
+		event.update();
 		Event newEvent = this.eventRepository.save(event);
-		URI createdUri = linkTo(EventController.class).slash(newEvent.getId()).toUri();
-		return ResponseEntity.created(createdUri).body(newEvent);
+		ControllerLinkBuilder selfLinkBuild = linkTo(EventController.class).slash(newEvent.getId());
+		URI createdUri = selfLinkBuild.toUri();
+		EventResource eventResource = new EventResource(newEvent);
+		eventResource.add(linkTo(EventController.class).withRel("query-events"));
+		// eventResource 내부로 이동
+//		eventResource.add(selfLinkBuild.withSelfRel());
+		eventResource.add(selfLinkBuild.withRel("update-event"));
+		return ResponseEntity.created(createdUri).body(eventResource);
 	}
 }

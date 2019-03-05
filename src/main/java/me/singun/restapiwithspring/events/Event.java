@@ -29,4 +29,18 @@ public class Event {
 	private boolean free;
 	@Enumerated(EnumType.STRING) // ordinal 은 enum 의 순서대로 숫자가 생성되는데, enum 의 순서가 변경되면 데이터가 꼬일 수 있음
 	private EventStatus eventStatus = EventStatus.DRAFT;
+
+	public void update() {
+		if (this.basePrice == 0 && this.maxPrice == 0) {
+			this.free = true;
+		} else {
+			this.free = false;
+		}
+
+		if (this.location == null || this.location.isEmpty()) {
+			this.offline = false;
+		} else {
+			this.offline = true;
+		}
+	}
 }
