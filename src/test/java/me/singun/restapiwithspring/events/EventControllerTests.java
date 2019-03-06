@@ -24,12 +24,14 @@ import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.time.LocalDateTime;
+import java.util.stream.IntStream;
 
 import static org.springframework.restdocs.headers.HeaderDocumentation.*;
 import static org.springframework.restdocs.hypermedia.HypermediaDocumentation.linkWithRel;
 import static org.springframework.restdocs.hypermedia.HypermediaDocumentation.links;
 import static org.springframework.restdocs.mockmvc.MockMvcRestDocumentation.document;
 import static org.springframework.restdocs.payload.PayloadDocumentation.*;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
@@ -56,6 +58,9 @@ public class EventControllerTests {
 
 	@Autowired
 	ObjectMapper objectMapper;
+
+	@Autowired
+	EventRepository eventRepository;
 
 	@Test
 	@TestDescription("정상적으로 이벤트를 생성하는 테스트")
@@ -200,5 +205,35 @@ public class EventControllerTests {
 			.andExpect(jsonPath("content[0].code").exists())
 			.andExpect(jsonPath("_links.index").exists())
 		;
+	}
+
+	@Test
+	@TestDescription("30개의 이벤트를 10개씩 두번쨰 페이지 조회하기")
+	public void queryEvents() throws Exception {
+		// given
+		IntStream.range(0, 30).forEach(this::generateEvent);
+
+		// when
+		mockMvc.perform(get("/api/events")
+			.param("page", "1")
+			.param("size", "10")
+			.param("sort", "name,DESC"))
+			.andDo(print())
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("page").exists())
+			.andExpect(jsonPath("_embedded.eventList[0]._links. self").exists())
+			.andExpect(jsonPath("_links.self").exists())
+			.andExpect(jsonPath("_links.profile").exists())
+			.andDo(document("query-events"))
+		;
+	}
+
+	private void generateEvent(int i) {
+		Event event = Event.builder()
+			.name("event" + i)
+			.description("test event")
+			.build();
+
+		eventRepository.save(event);
 	}
 }
