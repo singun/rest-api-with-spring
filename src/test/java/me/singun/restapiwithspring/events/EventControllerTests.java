@@ -1,21 +1,11 @@
 package me.singun.restapiwithspring.events;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import me.singun.restapiwithspring.common.RestDocsConfiguration;
+import me.singun.restapiwithspring.common.BaseControllerTest;
 import me.singun.restapiwithspring.common.TestDescription;
 import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.restdocs.AutoConfigureRestDocs;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.context.annotation.Import;
 import org.springframework.hateoas.MediaTypes;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
-import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.junit4.SpringRunner;
-import org.springframework.test.web.servlet.MockMvc;
 
 import java.time.LocalDateTime;
 import java.util.stream.IntStream;
@@ -29,31 +19,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-@RunWith(SpringRunner.class)
-//@WebMvcTest
-// 웹과 관련되 빈들이 모두 등록
-// slicing test -> web 계층만 테스트
-// 단위 테스트라고 보기에는 어려움
-// 왜 ? 너무 많은게 관련
-@SpringBootTest
-@AutoConfigureMockMvc
-@AutoConfigureRestDocs
-@Import(RestDocsConfiguration.class)
-@ActiveProfiles("test")
-public class EventControllerTests {
-
-	@Autowired
-	MockMvc mockMvc;
-	// mock으로 만들어져 있는 dispatcherServlet 를 사용할 수 있음
-	// data mapper, convert 등 많은게 포함
-	// 요청을 만들수 있고, 응답을 테스트 해볼 수 있음
-	// 웹서버를 띄우지 않기 때문에 빠름
-
-	@Autowired
-	ObjectMapper objectMapper;
-
-	@Autowired
-	EventRepository eventRepository;
+public class EventControllerTests extends BaseControllerTest {
 
 	@Test
 	@TestDescription("정상적으로 이벤트를 생성하는 테스트")
@@ -223,8 +189,16 @@ public class EventControllerTests {
 
 	private Event generateEvent(int i) {
 		Event event = Event.builder()
-			.name("event" + i)
-			.description("test event")
+			.name("event1")
+			.description("REST API Development with Spring")
+			.beginEnrollmentDateTime(LocalDateTime.now())
+			.closeEnrollmentDateTime(LocalDateTime.now())
+			.beginEventDateTime(LocalDateTime.now())
+			.endEventDateTime(LocalDateTime.now())
+			.basePrice(100)
+			.maxPrice(200)
+			.limitOfEnrollment(100)
+			.location("D2 Startup Factory")
 			.build();
 
 		return eventRepository.save(event);
@@ -356,7 +330,7 @@ public class EventControllerTests {
 			.andExpect(jsonPath("free").value(false))
 			.andExpect(jsonPath("offline").value(true))
 			.andExpect(jsonPath("eventStatus").value(EventStatus.DRAFT.name()))
-			.andDo(document("create-event",
+			.andDo(document("update-event",
 				links(
 					linkWithRel("self").description("link to self"),
 					linkWithRel("query-events").description("link to query event"),

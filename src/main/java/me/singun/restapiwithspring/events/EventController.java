@@ -113,6 +113,6 @@ public class EventController {
 		eventResource.add(selfLinkBuild.withRel("update-event"));
 		eventResource.add(new Link("/docs/index.html#resources-events-create").withRel("profile"));
 
-		return ResponseEntity.ok().body(eventResource);
+		return ResponseEntity.ok(eventResource);
 	}
 }
