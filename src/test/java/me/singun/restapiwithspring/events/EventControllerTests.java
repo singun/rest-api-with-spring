@@ -3,20 +3,14 @@ package me.singun.restapiwithspring.events;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import me.singun.restapiwithspring.common.RestDocsConfiguration;
 import me.singun.restapiwithspring.common.TestDescription;
-import org.hamcrest.Matchers;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.InjectMocks;
-import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.restdocs.AutoConfigureRestDocs;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.annotation.Import;
 import org.springframework.hateoas.MediaTypes;
-import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
@@ -31,8 +25,7 @@ import static org.springframework.restdocs.hypermedia.HypermediaDocumentation.li
 import static org.springframework.restdocs.hypermedia.HypermediaDocumentation.links;
 import static org.springframework.restdocs.mockmvc.MockMvcRestDocumentation.document;
 import static org.springframework.restdocs.payload.PayloadDocumentation.*;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -261,6 +254,156 @@ public class EventControllerTests {
 		mockMvc.perform(get("/api/events/{id}", 1231231232))
 			.andDo(print())
 			.andExpect(status().isNotFound())
+		;
+	}
+
+
+	//////////////////////////////////////////////////////////////////////////////
+	@Test
+	@TestDescription("수정하려는 이벤트가 없을 때, 404 응답받기")
+	public void updateEvent404() throws Exception {
+		// given
+		EventDto event = EventDto.builder()
+			.name("Spring")
+			.description("REST API Development with Spring")
+			.beginEnrollmentDateTime(LocalDateTime.now())
+			.closeEnrollmentDateTime(LocalDateTime.now())
+			.beginEventDateTime(LocalDateTime.now())
+			.endEventDateTime(LocalDateTime.now())
+			.basePrice(100)
+			.maxPrice(200)
+			.limitOfEnrollment(100)
+			.location("D2 Startup Factory")
+			.build();
+
+		// when
+		mockMvc.perform(put("/api/events/{id}", 123124124)
+			.contentType(MediaType.APPLICATION_JSON_UTF8)
+			.accept(MediaTypes.HAL_JSON)
+			.content(objectMapper.writeValueAsString(event)))
+			.andDo(print())
+			.andExpect(status().isNotFound())
+			;
+	}
+
+	@Test
+	@TestDescription("입력 데이터가 이상한 경우에 400 응답받기")
+	public void updateEvent400() throws Exception {
+		EventDto eventDto = EventDto.builder().build();
+
+		mockMvc.perform(put("/api/events/123124")
+			.contentType(MediaType.APPLICATION_JSON_UTF8)
+			.content(objectMapper.writeValueAsString(eventDto)))
+			.andExpect(status().isBadRequest());
+	}
+
+	@Test
+	@TestDescription("도메인 로직으로 데이터 검증 실패하면 400 응답받기")
+	public void updateEvent400_validation_fail() throws Exception {
+		EventDto eventDto = EventDto.builder()
+			.name("Spring")
+			.description("REST API Development with Spring")
+			.beginEnrollmentDateTime(LocalDateTime.now())
+			.closeEnrollmentDateTime(LocalDateTime.now())
+			.beginEventDateTime(LocalDateTime.now())
+			.endEventDateTime(LocalDateTime.now())
+			.basePrice(200)
+			.maxPrice(100)
+			.limitOfEnrollment(100)
+			.location("D2 Startup Factory")
+			.build();
+
+		this.mockMvc.perform(put("/api/events/12312412")
+			.contentType(MediaType.APPLICATION_JSON_UTF8)
+			.content(this.objectMapper.writeValueAsString(eventDto)))
+			.andDo(print())
+			.andExpect(status().isBadRequest())
+			.andExpect(jsonPath("content[0].objectName").exists())
+			.andExpect(jsonPath("content[0].defaultMessage").exists())
+			.andExpect(jsonPath("content[0].code").exists())
+			.andExpect(jsonPath("_links.index").exists())
+		;
+	}
+
+	@Test
+	@TestDescription("정상적으로 수정한 경우에 이벤트 리소스 응답")
+	public void updateEvent() throws Exception {
+		Event event1 = generateEvent(1);
+
+		EventDto event = EventDto.builder()
+			.name("Spring")
+			.description("REST API Development with Spring")
+			.beginEnrollmentDateTime(LocalDateTime.now())
+			.closeEnrollmentDateTime(LocalDateTime.now())
+			.beginEventDateTime(LocalDateTime.now())
+			.endEventDateTime(LocalDateTime.now())
+			.basePrice(100)
+			.maxPrice(200)
+			.limitOfEnrollment(100)
+			.location("D2 Startup Factory")
+			.build();
+
+		mockMvc.perform(
+			put("/api/events/{id}", event1.getId())
+				.contentType(MediaType.APPLICATION_JSON_UTF8)
+				.accept(MediaTypes.HAL_JSON)
+				.content(objectMapper.writeValueAsString(event)))
+			.andDo(print())
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("id").exists())
+			.andExpect(header().string(HttpHeaders.CONTENT_TYPE, MediaTypes.HAL_JSON_UTF8_VALUE))
+			.andExpect(jsonPath("basePrice").value(100))
+			.andExpect(jsonPath("free").value(false))
+			.andExpect(jsonPath("offline").value(true))
+			.andExpect(jsonPath("eventStatus").value(EventStatus.DRAFT.name()))
+			.andDo(document("create-event",
+				links(
+					linkWithRel("self").description("link to self"),
+					linkWithRel("query-events").description("link to query event"),
+					linkWithRel("update-event").description("link to update an existing"),
+					linkWithRel("profile").description("profile")
+				),
+				requestHeaders(
+					headerWithName(HttpHeaders.ACCEPT).description("accept header"),
+					headerWithName(HttpHeaders.CONTENT_TYPE).description("content type header")
+				),
+				requestFields(
+					fieldWithPath("name").description("name of new event"),
+					fieldWithPath("description").description("description of new event"),
+					fieldWithPath("beginEnrollmentDateTime").description("date time of begin of new event"),
+					fieldWithPath("closeEnrollmentDateTime").description("date time of close of new event"),
+					fieldWithPath("beginEventDateTime").description("date time of begin of new event"),
+					fieldWithPath("endEventDateTime").description("date time of end of new event"),
+					fieldWithPath("location").description("location of new event"),
+					fieldWithPath("basePrice").description("base price of new event"),
+					fieldWithPath("maxPrice").description("max price of new event"),
+					fieldWithPath("limitOfEnrollment").description("limit of enrollment")
+				),
+				responseHeaders(
+					headerWithName(HttpHeaders.CONTENT_TYPE).description("content type")
+				),
+				responseFields(
+					fieldWithPath("id").description("id of new event"),
+					fieldWithPath("name").description("name of new event"),
+					fieldWithPath("description").description("description of new event"),
+					fieldWithPath("beginEnrollmentDateTime").description("date time of begin of new event"),
+					fieldWithPath("closeEnrollmentDateTime").description("date time of close of new event"),
+					fieldWithPath("beginEventDateTime").description("date time of begin of new event"),
+					fieldWithPath("endEventDateTime").description("date time of end of new event"),
+					fieldWithPath("location").description("location of new event"),
+					fieldWithPath("basePrice").description("base price of new event"),
+					fieldWithPath("maxPrice").description("max price of new event"),
+					fieldWithPath("limitOfEnrollment").description("limit of enrollment"),
+					fieldWithPath("free").description("it tells if this event is free or not"),
+					fieldWithPath("offline").description("it tells if this event is free or not"),
+					fieldWithPath("eventStatus").description("event status"),
+
+					fieldWithPath("_links.self.href").description("hyper link for self link"),
+					fieldWithPath("_links.query-events.href").description("hyper link for query events link"),
+					fieldWithPath("_links.update-event.href").description("hyper link for update event link"),
+					fieldWithPath("_links.profile.href").description("profile")
+				)
+			))
 		;
 	}
 }

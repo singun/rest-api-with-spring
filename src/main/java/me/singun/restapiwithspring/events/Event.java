@@ -42,5 +42,9 @@ public class Event {
 		} else {
 			this.offline = true;
 		}
+
+		if (this.eventStatus == null) {
+			this.eventStatus = EventStatus.DRAFT;
+		}
 	}
 }
